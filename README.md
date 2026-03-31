@@ -39,7 +39,7 @@ providers:
     type: http
     url: https://slack-mcp.example.com
     oauth: true
-    oauth_callback_url: https://airlock-oauth-relay.<your-account>.workers.dev/callback
+    oauth_callback_url: https://auth.airlock.bot/callback
     client_id: $SLACK_CLIENT_ID
     client_secret: $SLACK_CLIENT_SECRET
 ```
