@@ -43,6 +43,17 @@ describe('OAuth relay worker', () => {
     expect(url.origin).toBe('http://127.0.0.1:18432');
   });
 
+  it('handles empty original state (port only)', async () => {
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?code=abc&state=18432.')
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get('Location')!);
+    expect(url.searchParams.get('state')).toBe('');
+    expect(url.searchParams.get('code')).toBe('abc');
+    expect(url.origin).toBe('http://127.0.0.1:18432');
+  });
+
   it('returns 404 for non-callback paths', async () => {
     const res = await worker.fetch(makeRequest('https://relay.example.com/'));
     expect(res.status).toBe(404);
