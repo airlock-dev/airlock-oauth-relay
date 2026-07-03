@@ -14,13 +14,13 @@ export default {
     }
 
     // State format: {port}.{original_state}
+    // A dotless state means the original state was empty: some providers strip the
+    // trailing dot from "{port}." before echoing it back. Treat the whole value as
+    // the port with an empty original state (the port range check below still
+    // rejects genuinely malformed states).
     const dotIndex = state.indexOf(".");
-    if (dotIndex === -1) {
-      return new Response("Invalid state format", { status: 400 });
-    }
-
-    const port = Number(state.substring(0, dotIndex));
-    const originalState = state.substring(dotIndex + 1);
+    const port = Number(dotIndex === -1 ? state : state.substring(0, dotIndex));
+    const originalState = dotIndex === -1 ? "" : state.substring(dotIndex + 1);
 
     if (!Number.isInteger(port) || port < 1024 || port > 65535) {
       return new Response("Invalid port", { status: 400 });

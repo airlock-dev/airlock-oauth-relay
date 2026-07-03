@@ -80,7 +80,19 @@ describe('OAuth relay worker', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 400 when state has no dot separator', async () => {
+  it('accepts a dotless numeric state as port with empty original state', async () => {
+    // Some providers strip the trailing dot from "{port}." (empty original state).
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?code=abc&state=18437')
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get('Location')!);
+    expect(url.origin).toBe('http://127.0.0.1:18437');
+    expect(url.searchParams.get('code')).toBe('abc');
+    expect(url.searchParams.get('state')).toBe('');
+  });
+
+  it('returns 400 when a dotless state is not a valid port', async () => {
     const res = await worker.fetch(
       makeRequest('https://relay.example.com/callback?code=abc&state=nodot')
     );
