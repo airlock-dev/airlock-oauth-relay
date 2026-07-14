@@ -29,6 +29,8 @@ Some OAuth providers (e.g. Slack) require HTTPS redirect URIs, but CLI tools lik
 2. The OAuth provider redirects to `https://<relay>/callback?code=xxx&state={port}.{original_state}`
 3. The relay extracts the port, restores the original state, and 302-redirects to `http://127.0.0.1:{port}/oauth/callback` with all query params passed through
 
+When the original state is empty, Airlock sends `state={port}.` — some providers (e.g. Linear) strip the trailing separator and echo back just `{port}`. The relay treats a bare numeric state as port-only with an empty original state.
+
 The relay is fully stateless — no database, no KV, no secrets. It never sees tokens (only the authorization code, which is useless without the PKCE verifier held by Airlock).
 
 ## Airlock configuration

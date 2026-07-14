@@ -14,16 +14,15 @@ export default {
     }
 
     // State format: {port}.{original_state}
+    // When the original state is empty, Airlock still sends "{port}." but some
+    // providers (e.g. Linear) strip the trailing separator, so a bare "{port}"
+    // arrives with no dot. Treat that as port-only with an empty original state.
     const dotIndex = state.indexOf(".");
-    if (dotIndex === -1) {
-      return new Response("Invalid state format", { status: 400 });
-    }
-
-    const port = Number(state.substring(0, dotIndex));
-    const originalState = state.substring(dotIndex + 1);
+    const port = Number(dotIndex === -1 ? state : state.substring(0, dotIndex));
+    const originalState = dotIndex === -1 ? "" : state.substring(dotIndex + 1);
 
     if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-      return new Response("Invalid port", { status: 400 });
+      return new Response("Invalid state format", { status: 400 });
     }
 
     const target = new URL(`http://127.0.0.1:${port}/oauth/callback`);
