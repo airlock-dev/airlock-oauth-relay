@@ -54,6 +54,19 @@ describe('OAuth relay worker', () => {
     expect(url.origin).toBe('http://127.0.0.1:18432');
   });
 
+  it('handles bare port with trailing dot stripped by provider (e.g. Linear)', async () => {
+    // Airlock sends "18437." for an empty original state; some providers strip
+    // the trailing dot and echo back just "18437".
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?code=abc&state=18437')
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get('Location')!);
+    expect(url.searchParams.get('state')).toBe('');
+    expect(url.searchParams.get('code')).toBe('abc');
+    expect(url.origin).toBe('http://127.0.0.1:18437');
+  });
+
   it('returns 404 for non-callback paths', async () => {
     const res = await worker.fetch(makeRequest('https://relay.example.com/'));
     expect(res.status).toBe(404);
@@ -80,7 +93,7 @@ describe('OAuth relay worker', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 400 when state has no dot separator', async () => {
+  it('returns 400 when state has no dot separator and is non-numeric', async () => {
     const res = await worker.fetch(
       makeRequest('https://relay.example.com/callback?code=abc&state=nodot')
     );
