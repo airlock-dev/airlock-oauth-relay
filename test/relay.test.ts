@@ -67,6 +67,42 @@ describe('OAuth relay worker', () => {
     expect(url.origin).toBe('http://127.0.0.1:18437');
   });
 
+  it('forwards OAuth error responses (no code) to localhost', async () => {
+    const res = await worker.fetch(
+      makeRequest(
+        'https://relay.example.com/callback?error=access_denied&error_description=User+denied&state=18432.orig'
+      )
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get('Location')!);
+    expect(url.origin).toBe('http://127.0.0.1:18432');
+    expect(url.pathname).toBe('/oauth/callback');
+    expect(url.searchParams.get('error')).toBe('access_denied');
+    expect(url.searchParams.get('error_description')).toBe('User denied');
+    expect(url.searchParams.get('state')).toBe('orig');
+  });
+
+  it('returns 400 when neither code nor error is present', async () => {
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?state=18432.orig')
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for a non-decimal port (hex)', async () => {
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?code=abc&state=0x1000')
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for a signed/whitespace port', async () => {
+    const res = await worker.fetch(
+      makeRequest('https://relay.example.com/callback?code=abc&state=%2B1200')
+    );
+    expect(res.status).toBe(400);
+  });
+
   it('returns 404 for non-callback paths', async () => {
     const res = await worker.fetch(makeRequest('https://relay.example.com/'));
     expect(res.status).toBe(404);
